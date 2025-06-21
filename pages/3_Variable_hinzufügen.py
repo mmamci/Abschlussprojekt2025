@@ -1,6 +1,15 @@
 import streamlit as st
+from fitfiles import read_fit_file
 
-st.title("Variable Hinzufügen","variable_hinzufuegen")
+
+
+st.title("📊 Variable Hinzufügen", "variable_hinzufuegen")
+
+uploaded_file = st.file_uploader("FIT-Datei hochladen", type=["fit"])
+if uploaded_file is not None:
+    fit_data = read_fit_file(uploaded_file)
+    st.write("FIT-Daten:", fit_data)         
+
 
 st.text_input("Name der Variable")
 st.text_input("Einheit")
@@ -42,8 +51,8 @@ if len(ss.notification_times) == 0:
     st.pills("Benachrichtigungen", ["\+"], on_change=create_notificaiton)
 
 elif ss.notification_type == "Daily":
-        notification_times_str = [i.strftime("%H:%M") for i in ss.notification_times]
-        st.pills("Benachrichtigungen", notification_times_str)
+    notification_times_str = [i.strftime("%H:%M") for i in ss.notification_times]
+    st.pills("Benachrichtigungen", notification_times_str)
 
 st.text_input("Ziel der festgelegten variable")
 

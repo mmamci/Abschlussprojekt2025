@@ -3,12 +3,14 @@ name = "Abschlussprojekt2025"
 version = "0.1.0"
 description = "Default template for PDM package"
 authors = [
-    {name = "Moritz", email = "-"},
+    {name = "SN0204", email = "-"},
     {name = "mmamci", email = "-"},
 ]
+
 dependencies = [
-    "streamlit>=1.46.0",
+    "streamlit>=1.45.1",
     "streamlit-calendar>=1.3.1",
+    "fitparse>=1.2.0",
 ]
 requires-python = "==3.13.*"
 readme = "README.md"
