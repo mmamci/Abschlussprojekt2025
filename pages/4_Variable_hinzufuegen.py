@@ -2,6 +2,10 @@ import streamlit as st
 from utility.fitfiles import read_fit_file
 from utility.css_snippets import display_as_pills
 
+class Variable:
+    def __init__(self):
+        pass
+
 class AddVariablePage:
     def __init__(self):
         self.ss = st.session_state
@@ -17,6 +21,18 @@ class AddVariablePage:
         
         self.main_page()
 
+    def save_values(self):
+        var_type = self.ss["type_selection"]
+
+        if "unit_selection" in self.ss:
+            var_unit = self.ss["unit_selection"]
+        else:
+            var_unit = "None"
+        
+        notif_times = self.ss.notification_times
+        notif_type = self.ss.notification_type
+                 
+
     def main_page(self):
         st.text_input("Kurztitel der Variable", help="Bsp: Gelaufene Meter")
 
@@ -26,7 +42,8 @@ class AddVariablePage:
 
         st.text_input("Ziel der festgelegten variable")
 
-        st.button("Variable Erstellen")
+        if st.button("Variable Erstellen"):
+            self.save_values()
 
     def variable_type_selection(self):
         variable_types = ["Quantitativ", "Checkbox", "Zuletzt getan", "Skala 1-10"]
@@ -34,7 +51,7 @@ class AddVariablePage:
 
         if self.ss["type_selection"] == "Quantitativ":
             st.write("Deine Variable wird durch diskrete Zahlen beschrieben. Bsp: Gelaufene Meter, gegessene Kalorien ...")
-            self.unit = st.selectbox("Welche Einheit hat deine Variable?", ["", "kg", "km", "h", "min", "Stück"], key="quant_einheit", accept_new_options=True)
+            st.selectbox("Welche Einheit hat deine Variable?", ["", "kg", "km", "h", "min", "Stück"], key="unit_selection", accept_new_options=True)
 
             st.selectbox("Sind größere oder kleinere Werte besser?", ["Je mehr desto besser", "Je weniger desto besser"], help="Um so mehr Gelaufene Meter um so besser -> Je mehr desto besser. Um so weniger Kalorien konsumiert um so besser -> Je weniger desto besser")
             
