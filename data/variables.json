@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Schritte",
+    "goal": "5000 am Tag",
+    "type": "Quantitativ",
+    "unit": "Stück",
+    "notification_type": "",
+    "notification_times": []
+  }
+]

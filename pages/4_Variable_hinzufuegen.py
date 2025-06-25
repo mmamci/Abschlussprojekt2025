@@ -1,23 +1,44 @@
 import streamlit as st
-from datetime import time
+import json
+from pathlib import Path
+from utils.css_snippets import write_as_pills  # falls du das nutzt
 
-from utils.css_snippets import write_as_pills
+DATA_PATH = Path("data")
+VARIABLES_FILE = DATA_PATH / "variables.json"
 
 class AddVariablePage:
     def __init__(self):
         self.ss = st.session_state
 
+        # Ordner und Datei vorbereiten
+        DATA_PATH.mkdir(exist_ok=True)
+        if not VARIABLES_FILE.exists():
+            VARIABLES_FILE.write_text("[]", encoding="utf-8")
+
+        # Variablen laden, falls nicht im session_state
+        if "variables" not in self.ss:
+            self.ss.variables = self.load_variables()
+
         if "notification_times" not in self.ss:
             self.ss.notification_times = []
         if "notification_type" not in self.ss:
             self.ss.notification_type = ""
-        if "variables" not in self.ss:
-            self.ss.variables = []
 
         self.main_page()
 
+    def load_variables(self):
+        try:
+            with open(VARIABLES_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def save_variables(self):
+        with open(VARIABLES_FILE, "w", encoding="utf-8") as f:
+            json.dump(self.ss.variables, f, ensure_ascii=False, indent=2)
+
     def save_values(self):
-        var_type = self.ss["type_selection"]
+        var_type = self.ss.get("type_selection", "")
 
         if "unit_selection" in self.ss:
             var_unit = self.ss["unit_selection"]
@@ -26,7 +47,7 @@ class AddVariablePage:
         
         notif_times = self.ss.notification_times
         notif_type = self.ss.notification_type
-                 
+        # Hier kannst du später weitere Daten verarbeiten, wenn nötig
 
     def main_page(self):
         st.title("📊 Neue Variable hinzufügen")
@@ -77,7 +98,7 @@ class AddVariablePage:
                 st.selectbox(
                     "Einheit der Variable",
                     ["", "kg", "km", "h", "min", "Stück"],
-                    key="quant_einheit",
+                    key="unit_selection",
                     help="Welche Maßeinheit passt zur Variable?"
                 )
 
@@ -126,7 +147,7 @@ class AddVariablePage:
 
             if st.button("Fertig"):
                 self.ss.notification_times = selected_days
-                st.rerun()
+                st.experimental_rerun()
 
         elif self.ss.notification_type == "Daily":
             times_per_day = st.selectbox("Wie oft pro Tag möchtest du erinnert werden?", [1, 2, 3])
@@ -135,7 +156,7 @@ class AddVariablePage:
 
             if st.button("Fertig"):
                 self.ss.notification_times = [self.ss[f"time_input_{i}"] for i in range(1, times_per_day + 1)]
-                st.rerun()
+                st.experimental_rerun()
 
     def save_variable(self):
         name = self.ss.get("var_shortname", "").strip()
@@ -143,11 +164,23 @@ class AddVariablePage:
             st.warning("Bitte gib einen Namen für die Variable ein.")
             return
 
-        if name in self.ss.variables:
+        # Check, ob Variable mit gleichem Namen bereits existiert
+        if any(v["name"] == name for v in self.ss.variables):
             st.warning("Diese Variable existiert bereits.")
             return
 
-        self.ss.variables.append(name)
+        # Variable als dict speichern inkl. Typ und Einheit
+        new_var = {
+            "name": name,
+            "goal": self.ss.get("var_goal", "").strip(),
+            "type": self.ss.get("type_selection", ""),
+            "unit": self.ss.get("unit_selection", ""),
+            "notification_type": self.ss.notification_type,
+            "notification_times": self.ss.notification_times,
+        }
+        self.ss.variables.append(new_var)
+
+        self.save_variables()  # in Datei speichern
         st.success(f"Variable '{name}' wurde erstellt!")
 
     def show_existing_variables(self):
@@ -157,13 +190,16 @@ class AddVariablePage:
         st.divider()
         st.subheader("📋 Bereits erstellte Variablen")
 
-        for i, var_name in enumerate(self.ss.variables):
+        for i, var in enumerate(self.ss.variables):
             col1, col2 = st.columns([4, 1])
             with col1:
-                st.markdown(f"**{var_name}**")
+                st.markdown(f"**{var['name']}** — Typ: {var.get('type', '')} — Einheit: {var.get('unit', '')}")
             with col2:
                 if st.button("🗑️ Löschen", key=f"delete_{i}"):
                     self.ss.variables.pop(i)
-                    st.rerun()
+                    self.save_variables()
+                    st.experimental_rerun()
+
 
 page = AddVariablePage()
+
