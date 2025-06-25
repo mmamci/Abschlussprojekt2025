@@ -1,6 +1,6 @@
 import streamlit as st
 
-def display_as_pills(content):
+def write_as_pills(content):
     st.markdown(
         "<div style='display: flex; gap: 8px; margin-bottom: 1em;'>"
         + "".join(

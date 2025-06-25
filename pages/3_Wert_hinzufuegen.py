@@ -1,5 +1,5 @@
 import streamlit as st
-from utility.fitfiles import read_fit_file
+from utils.fitfiles import read_fit_file
 from datetime import datetime
 
 class AddValuePage:
@@ -14,7 +14,6 @@ class AddValuePage:
     def main_page(self):
         st.title("➕ Neuen Wert hinzufügen")
 
-        # Oben: Variable & Datum nebeneinander
         col1, col2 = st.columns(2)
 
         variable_names = [
@@ -41,7 +40,6 @@ class AddValuePage:
 
         st.divider()
 
-        # Wert-Eingabe abhängig vom Typ
         user_value = None
         if selected_var:
             var_type = selected_var.get("type")
@@ -58,15 +56,12 @@ class AddValuePage:
                 st.info("Diese Variable verwendet automatisch das ausgewählte Datum als Wert.")
                 user_value = selected_date
 
-            elif var_type == "Skala 1–10":
+            elif var_type == "Skala 1-10":
                 user_value = st.slider("Wert auf der Skala", 1, 10, key="scale_input")
 
-        # Notizfeld
         st.text_area("📝 Eigene Notiz (optional)", key="user_note")
 
-        # Speichern
         if st.button("📥 Wert speichern"):
-            # Beispielhafte Speicherung in Session
             if "entries" not in self.ss:
                 self.ss.entries = []
 

@@ -1,11 +1,12 @@
 import streamlit as st
 from datetime import time
 
+from utils.css_snippets import write_as_pills
+
 class AddVariablePage:
     def __init__(self):
         self.ss = st.session_state
 
-        # Initialisierung
         if "notification_times" not in self.ss:
             self.ss.notification_times = []
         if "notification_type" not in self.ss:
@@ -30,7 +31,6 @@ class AddVariablePage:
     def main_page(self):
         st.title("📊 Neue Variable hinzufügen")
 
-        # Kurztitel und Ziel nebeneinander
         col1, col2 = st.columns([1, 2])
         with col1:
             st.text_input(
@@ -59,18 +59,18 @@ class AddVariablePage:
         self.show_existing_variables()
 
     def variable_type_selection(self):
-        variable_types = ["Quantitativ", "Checkbox", "Zuletzt getan", "Skala 1–10"]
+        variable_types = ["Quantitativ", "Checkbox", "Zuletzt getan", "Skala 1-10"]
 
         st.subheader("Art der Variable")
         var_type = st.selectbox(
             "Wie soll die Variable gemessen werden?",
             variable_types,
             key="type_selection",
-            help="Wähle die passende Art, z. B. Anzahl, Ja/Nein, Datum, Bewertung"
+            help="Wähle die passende Art, z.B. Anzahl, Ja/Nein, Datum, Bewertung"
         )
 
         if var_type == "Quantitativ":
-            st.info("Diese Variable wird durch Zahlen beschrieben, z. B. Schritte oder Kalorien.")
+            st.info("Diese Variable wird durch Zahlen beschrieben, z.B. Schritte oder Kalorien.")
 
             col1, col2 = st.columns(2)
             with col1:
@@ -90,13 +90,13 @@ class AddVariablePage:
                 )
 
         elif var_type == "Checkbox":
-            st.info("Diese Variable ist eine Ja/Nein-Antwort. Z. B. 'Sport gemacht heute?'")
+            st.info("Diese Variable ist eine Ja/Nein-Antwort. Z.B. 'Sport gemacht heute?'")
 
         elif var_type == "Zuletzt getan":
-            st.info("Diese Variable speichert, wann du zuletzt etwas getan hast. Z. B. 'Zuletzt geraucht'")
+            st.info("Diese Variable speichert, wann du zuletzt etwas getan hast. Z.B. 'Zuletzt geraucht'")
 
-        elif var_type == "Skala 1–10":
-            st.info("Diese Variable beschreibt deine Einschätzung auf einer Skala, z. B. 'Motivation heute'")
+        elif var_type == "Skala 1-10":
+            st.info("Diese Variable beschreibt deine Einschätzung auf einer Skala, z.B. 'Motivation heute'")
 
     def create_notification_display(self):
         st.subheader("Benachrichtigungen")
@@ -107,9 +107,9 @@ class AddVariablePage:
             st.write(f"🔔 {self.ss.notification_type} Benachrichtigung(en):")
             if self.ss.notification_type == "Daily":
                 times = [t.strftime("%H:%M") for t in self.ss.notification_times]
-                st.write(", ".join(times))
+                write_as_pills(times)
             elif self.ss.notification_type == "Weekly":
-                st.write(", ".join(self.ss.notification_times))
+                write_as_pills(self.ss.notification_times)
 
             st.button("🗑️ Alle Benachrichtigungen löschen", on_click=lambda: self.ss.notification_times.clear())
 
@@ -166,6 +166,4 @@ class AddVariablePage:
                     self.ss.variables.pop(i)
                     st.rerun()
 
-
-# Seite aufrufen
 page = AddVariablePage()
