@@ -4,6 +4,16 @@
     "goal": "5000 am Tag",
     "type": "Quantitativ",
     "unit": "Stück",
+    "color": "#7f7f7f",
+    "notification_type": "",
+    "notification_times": []
+  },
+  {
+    "name": "Empfinden",
+    "goal": "so oft wie möglich einen guten Tag haben",
+    "type": "Skala 1-10",
+    "unit": "",
+    "color": "#ff7f0e",
     "notification_type": "",
     "notification_times": []
   }

@@ -1,0 +1,16 @@
+[
+  {
+    "variable": "Schritte",
+    "datum": "2025-06-25",
+    "wert": 100.0,
+    "notiz": "",
+    "fit_datei_vorhanden": false
+  },
+  {
+    "variable": "Empfinden",
+    "datum": "2025-06-24",
+    "wert": 9,
+    "notiz": "Es war ein guter Tag",
+    "fit_datei_vorhanden": false
+  }
+]
