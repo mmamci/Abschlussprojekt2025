@@ -1,73 +1,45 @@
-import json
+import json, os, tempfile
 from pathlib import Path
-from typing import Any, List
+from typing import List
 
-# Basisordner
 DATA_DIR = Path("data")
-DATA_DIR.mkdir(exist_ok=True)                 # Ordner sicher anlegen
+DATA_DIR.mkdir(exist_ok=True)
 
-# Pfade
 VARIABLES_FILE = DATA_DIR / "variables.json"
 ENTRIES_FILE   = DATA_DIR / "entries.json"
 
-
-def _ensure_file(path: Path) -> None:
-    """
-    Stellt sicher, dass die Datei existiert.
-    Wenn nicht, wird sie mit einer leeren JSON-Liste '[]' angelegt.
-    """
+def _ensure_file(path: Path):
     if not path.exists():
-        try:
-            path.write_text("[]", encoding="utf-8")
-        except PermissionError as e:
-            raise PermissionError(
-                f"Kein Schreibzugriff auf '{path}'. "
-                "Bitte prüfe Rechte oder schließe Programme, die die Datei geöffnet haben."
-            ) from e
+        path.write_text("[]", encoding="utf-8")
 
+def _atomic_write(path: Path, data: List[dict]):
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=path.parent, text=True)
+    with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp:
+        json.dump(data, tmp, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, path)
 
 # ---------- Variablen ----------
-def load_variables() -> List[dict]:
+def load_variables():
     _ensure_file(VARIABLES_FILE)
-    try:
-        return json.loads(VARIABLES_FILE.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return []
+    with open(VARIABLES_FILE, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return []
 
-
-def save_variables(variables: List[dict]) -> None:
+def save_variables(vars_: list[dict]):
     _ensure_file(VARIABLES_FILE)
-    try:
-        VARIABLES_FILE.write_text(
-            json.dumps(variables, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    except PermissionError as e:
-        raise PermissionError(
-            f"Fehler beim Schreiben in '{VARIABLES_FILE}'. "
-            "Ist die Datei geöffnet oder schreibgeschützt?"
-        ) from e
-
+    _atomic_write(VARIABLES_FILE, vars_)
 
 # ---------- Einträge ----------
-def load_entries() -> List[dict]:
+def load_entries():
     _ensure_file(ENTRIES_FILE)
-    try:
-        return json.loads(ENTRIES_FILE.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return []
+    with open(ENTRIES_FILE, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return []
 
-
-def save_entries(entries: List[dict]) -> None:
+def save_entries(entries: list[dict]):
     _ensure_file(ENTRIES_FILE)
-    try:
-        ENTRIES_FILE.write_text(
-            json.dumps(entries, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    except PermissionError as e:
-        raise PermissionError(
-            f"Fehler beim Schreiben in '{ENTRIES_FILE}'. "
-            "Ist die Datei geöffnet oder schreibgeschützt?"
-        ) from e
-    
+    _atomic_write(ENTRIES_FILE, entries)
