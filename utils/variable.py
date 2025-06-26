@@ -32,14 +32,17 @@ class VariableHandle:
 
     def __init__(self):
         self.current_variables = []
+        self.user = "standard"
+        self.password = ""
+        
         self.read_variables()
 
     def read_variables(self):
-        if not os.path.exists('data/variables.json') or os.path.getsize('data/variables.json') == 0:
+        if not os.path.exists(f'data/{self.user}.json') or os.path.getsize(f'data/{self.user}.json') == 0:
             self.current_variables = []
             return
 
-        with open('data/variables.json', 'r') as f:
+        with open(f'data/{self.user}.json', 'r') as f:
             try:
                 variables_list = json.load(f)
                 self.current_variables = []
@@ -61,7 +64,7 @@ class VariableHandle:
 
 
     def write_variables(self):
-        with open('data/variables.json', 'w') as f:
+        with open(f'data/{self.user}.json', 'w') as f:
             json.dump(
                 [
                     {

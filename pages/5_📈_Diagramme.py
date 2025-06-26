@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import altair as alt
 from utils.variable import VariableHandle, Variable, DataEntry
 
 
@@ -11,37 +11,35 @@ class DiagrammPage:
 
         self.ss = st.session_state
 
-        if "variableHandle" not in self.ss:
-            self.ss.variableHandle = VariableHandle()
+        self.ss.variableHandle = VariableHandle()
 
         self.ss.variableHandle.read_variables()
 
+        self.entries = []
         self.variables = self.ss.variableHandle.current_variables
 
-        # Alle DataEntry-Objekte in Dicts umwandeln
-        self.entries = [
-            {"variable": var.name, "datum": entry.date, "wert": entry.value, "notiz": entry.note}
-            for var in self.variables for entry in var.data
-        ]
+        for var in self.variables:
+            self.entries.append(var.data)
 
         self.build_page()
         
     def build_page(self):
-        # Falls keine Werte vorhanden
+    # Falls keine Werte vorhanden
         if not self.entries:
             st.info("Es wurden noch keine Werte eingetragen.")
             st.stop()
 
         # DataFrame mit Datum als Datetime
         df = pd.DataFrame(self.entries)
-        df["datum"] = pd.to_datetime(df["datum"])
+        df["date"] = pd.to_datetime(df["date"])
 
         # Für jede Variable ein Diagramm
         for var in self.variables:
-            name   = var.name
-            v_type = var.variable_type
-            unit   = getattr(var, "unit", "") or ""
-            goal   = getattr(var, "goal", None)
+            name   = var["name"]
+            v_type = var["type"]
+            unit   = var.get("unit", "")
+            color  = var.get("color", "#1f77b4")
+            goal   = var.get("goal", None)  # Ziel holen, falls vorhanden
 
             st.subheader(f"{name}")
 
@@ -58,24 +56,49 @@ class DiagrammPage:
                 continue
 
             if v_type in ["Quantitativ", "Skala 1-10"]:
-                fig = px.line(var_df, x="datum", y="wert", markers=True, title=name)
-                fig.update_layout(yaxis_title=f"Wert ({unit})" if unit else "Wert", xaxis_title="Datum", height=300)
-                st.plotly_chart(fig, use_container_width=True)
+                chart = (
+                    alt.Chart(var_df)
+                    .mark_line(point=True, color=color)
+                    .encode(
+                        x=alt.X("datum:T", title="Datum"),
+                        y=alt.Y("wert:Q", title=f"Wert ({unit})" if unit else "Wert"),
+                        tooltip=["datum:T", "wert:Q", "notiz:N"],
+                    )
+                    .properties(height=250, width=700)
+                )
+                st.altair_chart(chart, use_container_width=True)
 
             elif v_type == "Checkbox":
+                # Checkbox True/False als 1/0 für Balken
                 var_df["wert_num"] = var_df["wert"].astype(int)
-                fig = px.bar(var_df, x="datum", y="wert_num", title=name)
-                fig.update_layout(yaxis_title="Erledigt (1 = Ja)", xaxis_title="Datum", height=200)
-                st.plotly_chart(fig, use_container_width=True)
+                chart = (
+                    alt.Chart(var_df)
+                    .mark_bar(color=color)
+                    .encode(
+                        x=alt.X("datum:T", title="Datum"),
+                        y=alt.Y("wert_num:Q", title="Erledigt (1 = Ja)"),
+                        tooltip=["datum:T", "wert_num", "notiz:N"],
+                    )
+                    .properties(height=200, width=700)
+                )
+                st.altair_chart(chart, use_container_width=True)
 
             elif v_type == "Zuletzt getan":
-                fig = px.scatter(var_df, x="datum", y=[1]*len(var_df), size_max=10, title=name)
-                fig.update_traces(marker=dict(size=16))
-                fig.update_layout(yaxis=dict(showticklabels=False, showgrid=False, zeroline=False), height=120)
-                st.plotly_chart(fig, use_container_width=True)
+                chart = (
+                    alt.Chart(var_df)
+                    .mark_circle(size=120, color=color)
+                    .encode(
+                        x=alt.X("datum:T", title="Datum"),
+                        y=alt.value(1),  # Punkte auf einer Linie
+                        tooltip=["datum:T", "notiz:N"],
+                    )
+                    .properties(height=120, width=700)
+                    .configure_axisY(domain=False, ticks=False, labels=False)
+                )
+                st.altair_chart(chart, use_container_width=True)
 
             # Notizen als Tabelle unter dem Diagramm (optional)
-            if var_df["notiz"].astype(str).str.strip().any():
+            if var_df["notiz"].str.strip().any():
                 with st.expander("Notizen anzeigen"):
                     st.table(var_df[["datum", "wert", "notiz"]].rename(columns={
                         "datum": "Datum", "wert": "Wert", "notiz": "Notiz"

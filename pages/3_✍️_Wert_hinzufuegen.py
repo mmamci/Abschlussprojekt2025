@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import datetime
-from utils.json_storage import load_entries, save_entries
 from utils.fitfiles import read_fit_file 
 from utils.variable import Variable, VariableHandle, DataEntry
 
@@ -9,8 +8,6 @@ class AddValuePage:
         self.ss = st.session_state
         
         # Variablen-Objekte laden, falls nicht vorhanden
-        if "variableHandle" not in self.ss:
-            self.ss.variableHandle = VariableHandle()
         if "variables" not in self.ss:
             self.variables = self.ss.variableHandle.current_variables
 

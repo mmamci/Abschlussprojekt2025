@@ -15,8 +15,6 @@ class AddVariablePage:
         self.main_page()
 
     def initialize_variables(self):
-        if "variableHandle" not in self.ss:
-            self.ss.variableHandle = VariableHandle()
         if "name" not in self.ss:
             self.ss.name = ""
         if "goal" not in self.ss:

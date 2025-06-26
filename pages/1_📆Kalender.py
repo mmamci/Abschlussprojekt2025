@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_calendar import calendar
-from utils.calendar_events import build_calendar_events
+from utils.variable import VariableHandle
 from utils.css_snippets import write_as_pills
 
 
@@ -8,32 +8,41 @@ from utils.css_snippets import write_as_pills
 
 class CalendarPage():
     def __init__(self):
-        self.events, self.variables = build_calendar_events()
-        # Kalender-Ereignisse und Variablen laden
-        
+        # Variablen und Einträge laden
+        ss = st.session_state
+        if "variableHandle" not in ss:
+            ss.variableHandle = VariableHandle()
+        ss.variableHandle.read_variables()
+        self.variables = ss.variableHandle.current_variables
+        # Events für Kalender bauen
+        self.events = []
+        for var in self.variables:
+            color = getattr(var, "color", "#1f77b4")
+            for entry in var.data:
+                self.events.append({
+                    "title": f"{var.name}: {entry.value}",
+                    "start": str(entry.date),
+                    "color": color,
+                    "description": entry.note or ""
+                })
         st.title("📆 Kalender Ansicht")
-        # Kalender anzeigen
         selected = calendar(events=self.events, options={"selectable": True})
-
         # Legende anzeigen
         st.write("### Legende")
         for v in self.variables:
+            color = getattr(v, "color", "#1f77b4")
             st.markdown(
                 f"<div style='display:flex; align-items:center; margin-bottom:6px;'>"
-                f"<div style='background-color:{v['color']}; width:20px; height:20px; margin-right:10px; border-radius:4px;'></div>"
-                f"<span style='color:white; background-color:#333; padding:4px 8px; border-radius:4px;'>{v['name']}</span>"
+                f"<div style='background-color:{color}; width:20px; height:20px; margin-right:10px; border-radius:4px;'></div>"
+                f"<span style='color:white; background-color:#333; padding:4px 8px; border-radius:4px;'>{v.name}</span>"
                 f"</div>",
                 unsafe_allow_html=True
             )
-
-        # Wenn ein Datum gewählt wurde, zeige die Details
+        # Details zum ausgewählten Datum
         if selected and selected.get("start"):
             st.markdown("### 📋 Details zum ausgewählten Datum")
-            selected_date = selected["start"][:10]  # Format: YYYY-MM-DD
-
-            # Suche Events zum gewählten Datum
+            selected_date = selected["start"][:10]
             date_events = [e for e in self.events if e["start"].startswith(selected_date)]
-
             if not date_events:
                 st.info("Keine Einträge für dieses Datum.")
             else:
@@ -45,3 +54,5 @@ class CalendarPage():
                         unsafe_allow_html=True
                     )
                     st.markdown("---")
+
+CalendarPage()
