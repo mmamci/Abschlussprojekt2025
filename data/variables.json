@@ -2,20 +2,14 @@
   {
     "name": "Laufmeter",
     "goal": "mehr laufen",
-    "alert_times": ["2025-06-26T16:40:00"],
+    "alert_times": ["2025-06-26T17:29:00"],
     "type": "Quantitativ",
-    "unit": "m",
+    "unit": "km",
     "decrease_preferred": false,
     "data": [
       {
         "date": "2025-06-26",
-        "value": 5000.0,
-        "note": "Es war sehr anstrengend",
-        "isFromFitFile": false
-      },
-      {
-        "date": "2025-06-26",
-        "value": 5000.0,
+        "value": 5.0,
         "note": "",
         "isFromFitFile": false
       }

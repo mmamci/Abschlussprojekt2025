@@ -62,31 +62,30 @@ class VariableHandle:
 
     def write_variables(self):
         with open('data/variables.json', 'w') as f:
-            for variable in self.current_variables:
-                json.dump(
-                    [
-                        {
-                            "name": variable.name,
-                            "goal": variable.goal,
-                            "alert_times": [
-                                datetime.combine(date.today(), dt).isoformat() for dt in variable.alert_times
-                            ],
-                            "type": variable.variable_type,
-                            "unit": variable.unit,
-                            "decrease_preferred": variable.decrease_preferred,
-                            "data": [
-                                {
-                                    **{k: (v.isoformat() if isinstance(v, (datetime, date, time)) else v) for k, v in entry.__dict__.items()}
-                                }
-                                for entry in variable.data
-                            ]
-                        }
-                        for variable in self.current_variables
-                    ],
-                    f,
-                    indent=4,
-                    default=VariableHandle.default_serializer
-                )
+            json.dump(
+                [
+                    {
+                        "name": variable.name,
+                        "goal": variable.goal,
+                        "alert_times": [
+                            datetime.combine(date.today(), dt).isoformat() for dt in variable.alert_times
+                        ],
+                        "type": variable.variable_type,
+                        "unit": variable.unit,
+                        "decrease_preferred": variable.decrease_preferred,
+                        "data": [
+                            {
+                                **{k: (v.isoformat() if isinstance(v, (datetime, date, time)) else v) for k, v in entry.__dict__.items()}
+                            }
+                            for entry in variable.data
+                        ]
+                    }
+                    for variable in self.current_variables
+                ],
+                f,
+                indent=4,
+                default=VariableHandle.default_serializer
+            )
 
     @staticmethod
     def default_serializer(obj):

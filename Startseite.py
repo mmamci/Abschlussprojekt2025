@@ -57,3 +57,5 @@ def build_main_page():
     st.write("Besondere Erfolge und Entwicklungen deiner Gesundheitsreise auf einen Blick.")
     
     st.markdown("---")
+
+build_main_page()

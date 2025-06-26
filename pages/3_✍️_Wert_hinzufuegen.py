@@ -1,68 +1,118 @@
 import streamlit as st
 from datetime import datetime
 from utils.json_storage import load_entries, save_entries
-from utils.fitfiles import read_fit_file  # optional
+from utils.fitfiles import read_fit_file 
+from utils.variable import Variable, VariableHandle, DataEntry
 
 class AddValuePage:
     def __init__(self):
-        ss=st.session_state
-        if not ss.get("variables"):
-            st.info("⚠️ Erst Variable anlegen."); return
-        if "entries" not in ss:
-            ss.entries=load_entries()
-        self.ss=ss; self.build()
-
-    def build(self):
-        st.title("➕ Wert erfassen")
-
-        names=[v["name"] for v in self.ss.variables]
-        c1,c2=st.columns(2)
-        with c1: sel_var=st.selectbox("Variable",names)
-        with c2: sel_date=st.date_input("Datum",datetime.today())
-        var_info=next(v for v in self.ss.variables if v["name"]==sel_var)
-        st.divider()
-
-        file=st.file_uploader("FIT-Datei (optional)",type=["fit"])
-        if file:
-            st.success("FIT gelesen"); st.write(read_fit_file(file)[:3])
-        st.divider()
-
+        self.ss = st.session_state
         
-        val=None
-        if var_info["type"]=="Quantitativ":
-            label="Wert" + (f" ({var_info['unit']})" if var_info["unit"] else "")
-            val=st.number_input(label)
-        elif var_info["type"]=="Checkbox":
-            val=st.checkbox("Heute erledigt?")
-        elif var_info["type"]=="Zuletzt getan":
-            st.info("Datum wird übernommen.")
-            val=sel_date.strftime("%Y-%m-%d")
-        else:
-            val=st.slider("Wert (1-10)",1,10)
+        # Variablen-Objekte laden, falls nicht vorhanden
+        if "variableHandle" not in self.ss:
+            self.ss.variableHandle = VariableHandle()
+        if "variables" not in self.ss:
+            self.variables = self.ss.variableHandle.current_variables
 
-        note=st.text_area("📝 Notiz (optional)")
+        self.new_entry = None
 
+        # 1) Prüfen, ob Variablen vorhanden sind
+        if not self.variables:
+            st.info("⚠️ Bitte erst eine Variable erstellen, bevor du Werte hinzufügen kannst.")
+            return
+
+        self.build_page()
+
+    def build_page(self):
+        st.title("➕ Neuen Wert hinzufügen")
+
+        # ---------- Kopfzeile: Variable + Datum ----------
+        variable_names = [v.name for v in self.variables]
+
+        col1, col2 = st.columns(2)
+        with col1:
+            self.selected_var_name = st.selectbox("Variable auswählen", variable_names, key="selected_var")
+        with col2:
+            self.selected_date = st.date_input("Datum", datetime.today(), key="self.selected_date")
+
+        self.selected_var = next(v for v in self.variables if v.name == self.selected_var_name)
+
+        st.divider()
+
+        # ---------- FIT‑Datei (optional) ----------
+        self.uploaded_file = st.file_uploader("FIT-Datei hochladen (optional)", type=["fit"])
+        if self.uploaded_file:
+            fit_data = read_fit_file(self.uploaded_file)
+            st.success("FIT-Datei erfolgreich gelesen.")
+            st.write("📄 Vorschau (erste 3 Zeilen):")
+            st.write(fit_data[:3])
+
+        st.divider()
+        self.type_dependent_input()
+                
         if st.button("📥 Wert speichern"):
-            entry={
-                "variable":sel_var,
-                "datum":sel_date.strftime("%Y-%m-%d"),
-                "wert":val,
-                "notiz":note,
-                "fit_datei_vorhanden":bool(file),
-            }
-            self.ss.entries.append(entry); save_entries(self.ss.entries)
-            st.success("Gespeichert.")
+            self.save_entry()
+
+        self.show_entries()
+
+    def type_dependent_input(self):
+        self.user_value = None
+        var_type   = self.selected_var.variable_type
+        unit       = self.selected_var.unit
+
+        if var_type == "Quantitativ":
+            label = f"Wert eingeben ({unit})" if unit else "Wert eingeben"
+            self.user_value = st.number_input(label, key="quant_input")
+
+        elif var_type == "Checkbox":
+            self.user_value = st.checkbox("Heute erledigt?", key="checkbox_input")
+
+        elif var_type == "Zuletzt getan":
+            st.info("Diese Variable verwendet automatisch das ausgewählte Datum als Wert.")
+            self.user_value = self.selected_date.strftime("%Y-%m-%d")
+
+        elif var_type == "Skala 1-10":
+            self.user_value = st.slider("Wert auf der Skala", 1, 10, key="scale_input")
+
+        self.note = st.text_area("📝 Notiz (optional)", key="user_note")
+
+
+    def save_entry(self):
+        self.new_entry = DataEntry(
+            self.selected_date,
+            self.user_value,
+            self.note,
+            bool(self.uploaded_file)
+        )
+
+        self.ss.variableHandle.write_variables()
+
+    def show_entries(self):
+        for var in self.variables:
+            if var.name == self.selected_var_name:
+
+                if self.new_entry != None:
+                    var.data.append(self.new_entry)
+                # Anzeige und Löschoption direkt aus var.data
+                st.divider()
+                st.subheader("📜 Letzte gespeicherte Einträge")
+                related_entries = var.data
+                if related_entries:
+                    last_five = related_entries[-5:][::-1]  # umgekehrte Reihenfolge (neuester oben)
+                    for idx, entry in enumerate(last_five):
+                        col_entry, col_del = st.columns([5, 1])
+                        with col_entry:
+                            st.markdown(f"📅 **{entry.date}** - Wert: `{entry.value}`")
+                            if entry.note:
+                                st.markdown(f"📝 *{entry.note}*")
+                        if col_del.button("🗑️", key=f"del_{entry.date}_{idx}"):
+                            var.data.remove(entry)
+                            self.ss.variableHandle.write_variables()
+                            st.rerun()
+                else:
+                    st.info("Noch keine Einträge gespeichert.")
 
         
-        st.divider(); st.subheader("Letzte Einträge")
-        rel=[e for e in self.ss.entries if e["variable"]==sel_var][-5:][::-1]
-        if not rel: st.info("Noch keine Einträge."); return
-        for i,e in enumerate(rel):
-            c_txt,c_btn=st.columns([5,1])
-            with c_txt:
-                st.markdown(f"📅 **{e['datum']}** – **{e['variable']}**: `{e['wert']}`")
-                if e.get("notiz"): st.markdown(f"*{e['notiz']}*")
-            if c_btn.button("🗑️",key=f"del_{i}"):
-                self.ss.entries.remove(e); save_entries(self.ss.entries)
 
-AddValuePage()
+# ---------------- Aufruf der Seite ----------------
+page = AddValuePage()
