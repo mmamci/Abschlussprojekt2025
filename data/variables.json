@@ -1,10 +1,26 @@
 [
-  {
-    "name": "Schritte",
-    "goal": "5000 am Tag",
-    "type": "Quantitativ",
-    "unit": "Stück",
-    "notification_type": "",
-    "notification_times": []
-  }
+    {
+        "name": "Laufmeter",
+        "goal": "mehr laufen",
+        "alert_times": [
+            "2025-06-26T16:40:00"
+        ],
+        "type": "Quantitativ",
+        "unit": "m",
+        "decrease_preferred": false,
+        "data": [
+            {
+                "date": "2025-06-26",
+                "value": 5000.0,
+                "note": "Es war sehr anstrengend",
+                "isFromFitFile": false
+            },
+            {
+                "date": "2025-06-26",
+                "value": 5000.0,
+                "note": "",
+                "isFromFitFile": false
+            }
+        ]
+    }
 ]
