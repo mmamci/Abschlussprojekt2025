@@ -7,10 +7,24 @@
     "fit_datei_vorhanden": false
   },
   {
+    "variable": "Schritte",
+    "datum": "2025-06-26",
+    "wert": 5000.0,
+    "notiz": "",
+    "fit_datei_vorhanden": false
+  },
+  {
     "variable": "Empfinden",
-    "datum": "2025-06-24",
+    "datum": "2025-06-26",
     "wert": 9,
-    "notiz": "Es war ein guter Tag",
+    "notiz": "",
+    "fit_datei_vorhanden": false
+  },
+  {
+    "variable": "Empfinden",
+    "datum": "2025-06-25",
+    "wert": 3,
+    "notiz": "Schlecht ",
     "fit_datei_vorhanden": false
   }
 ]

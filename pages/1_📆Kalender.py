@@ -1,19 +1,43 @@
 import streamlit as st
 from streamlit_calendar import calendar
 from utils.calendar_events import build_calendar_events
+from utils.css_snippets import write_as_pills
 
 st.title("📆 Kalender Ansicht")
 
+# Kalender-Ereignisse und Variablen laden
 events, variables = build_calendar_events()
-calendar(events=events, options={})
 
+# Kalender anzeigen
+selected = calendar(events=events, options={"selectable": True})
 
+# Legende anzeigen
+st.write("### Legende")
 for v in variables:
-    col1, col2 = st.columns([0.1, 0.9])
-    with col1:
-        st.markdown(
-            f"<div style='width: 20px; height: 20px; background-color: {v['color']}; border-radius: 4px;'></div>",
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.write(v["name"])
+    st.markdown(
+        f"<div style='display:flex; align-items:center; margin-bottom:6px;'>"
+        f"<div style='background-color:{v['color']}; width:20px; height:20px; margin-right:10px; border-radius:4px;'></div>"
+        f"<span style='color:white; background-color:#333; padding:4px 8px; border-radius:4px;'>{v['name']}</span>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+# Wenn ein Datum gewählt wurde, zeige die Details
+if selected and selected.get("start"):
+    st.markdown("### 📋 Details zum ausgewählten Datum")
+    selected_date = selected["start"][:10]  # Format: YYYY-MM-DD
+
+    # Suche Events zum gewählten Datum
+    date_events = [e for e in events if e["start"].startswith(selected_date)]
+
+    if not date_events:
+        st.info("Keine Einträge für dieses Datum.")
+    else:
+        for e in date_events:
+            st.markdown(
+                f"**🟢 {e['title']}**  \n"
+                f"<span style='color:gray'>📅 {selected_date}</span><br>"
+                f"{e.get('description', 'Keine Notiz vorhanden')}",
+                unsafe_allow_html=True
+            )
+            st.markdown("---")
