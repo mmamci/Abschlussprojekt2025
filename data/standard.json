@@ -1,0 +1,56 @@
+[
+    {
+        "name": "Schritte",
+        "goal": "5000 am Tag",
+        "alert_times": [],
+        "type": "Quantitativ",
+        "unit": "St\u00fcck",
+        "decrease_preferred": false,
+        "data": [
+            {
+                "date": "2025-06-27",
+                "value": 5000.0,
+                "note": "",
+                "isFromFitFile": false
+            },
+            {
+                "date": "2025-06-26",
+                "value": 1000.0,
+                "note": "",
+                "isFromFitFile": false
+            }
+        ]
+    },
+    {
+        "name": "Emfpinden",
+        "goal": "",
+        "alert_times": [],
+        "type": "Skala 1-10",
+        "unit": "St\u00fcck",
+        "decrease_preferred": false,
+        "data": [
+            {
+                "date": "2025-06-27",
+                "value": 9,
+                "note": "",
+                "isFromFitFile": false
+            }
+        ]
+    },
+    {
+        "name": "Laufen",
+        "goal": "",
+        "alert_times": [],
+        "type": "Quantitativ",
+        "unit": "km",
+        "decrease_preferred": false,
+        "data": [
+            {
+                "date": "2025-06-27",
+                "value": 5.0,
+                "note": "",
+                "isFromFitFile": false
+            }
+        ]
+    }
+]

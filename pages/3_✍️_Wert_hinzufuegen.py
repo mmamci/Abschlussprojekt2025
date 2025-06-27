@@ -6,14 +6,15 @@ from utils.variable import Variable, VariableHandle, DataEntry
 class AddValuePage:
     def __init__(self):
         self.ss = st.session_state
-        
-        # Variablen-Objekte laden, falls nicht vorhanden
-        if "variables" not in self.ss:
-            self.variables = self.ss.variableHandle.current_variables
 
+        # VariableHandle initialisieren, falls nötig
+        if "variableHandle" not in self.ss:
+            self.ss.variableHandle = VariableHandle()
+        self.ss.variableHandle.read_variables()
+
+        self.variables = self.ss.variableHandle.current_variables
         self.new_entry = None
 
-        # 1) Prüfen, ob Variablen vorhanden sind
         if not self.variables:
             st.info("⚠️ Bitte erst eine Variable erstellen, bevor du Werte hinzufügen kannst.")
             return
@@ -23,7 +24,6 @@ class AddValuePage:
     def build_page(self):
         st.title("➕ Neuen Wert hinzufügen")
 
-        # ---------- Kopfzeile: Variable + Datum ----------
         variable_names = [v.name for v in self.variables]
 
         col1, col2 = st.columns(2)
@@ -36,7 +36,6 @@ class AddValuePage:
 
         st.divider()
 
-        # ---------- FIT‑Datei (optional) ----------
         self.uploaded_file = st.file_uploader("FIT-Datei hochladen (optional)", type=["fit"])
         if self.uploaded_file:
             fit_data = read_fit_file(self.uploaded_file)
@@ -54,8 +53,8 @@ class AddValuePage:
 
     def type_dependent_input(self):
         self.user_value = None
-        var_type   = self.selected_var.variable_type
-        unit       = self.selected_var.unit
+        var_type = self.selected_var.variable_type
+        unit = self.selected_var.unit
 
         if var_type == "Quantitativ":
             label = f"Wert eingeben ({unit})" if unit else "Wert eingeben"
@@ -73,7 +72,6 @@ class AddValuePage:
 
         self.note = st.text_area("📝 Notiz (optional)", key="user_note")
 
-
     def save_entry(self):
         self.new_entry = DataEntry(
             self.selected_date,
@@ -82,34 +80,32 @@ class AddValuePage:
             bool(self.uploaded_file)
         )
 
+        # ✅ Neuen Eintrag anhängen
+        self.selected_var.data.append(self.new_entry)
+
+        # ✅ In Datei speichern
         self.ss.variableHandle.write_variables()
 
+        st.success("Eintrag gespeichert!")
+
     def show_entries(self):
-        for var in self.variables:
-            if var.name == self.selected_var_name:
+        st.divider()
+        st.subheader("📜 Letzte gespeicherte Einträge")
+        related_entries = self.selected_var.data
+        if related_entries:
+            last_five = related_entries[-5:][::-1]
+            for idx, entry in enumerate(last_five):
+                col_entry, col_del = st.columns([5, 1])
+                with col_entry:
+                    st.markdown(f"📅 **{entry.date}** – Wert: `{entry.value}`")
+                    if entry.note:
+                        st.markdown(f"📝 *{entry.note}*")
+                if col_del.button("🗑️", key=f"del_{entry.date}_{idx}"):
+                    self.selected_var.data.remove(entry)
+                    self.ss.variableHandle.write_variables()
+                    st.rerun()
+        else:
+            st.info("Noch keine Einträge gespeichert.")
 
-                if self.new_entry != None:
-                    var.data.append(self.new_entry)
-                # Anzeige und Löschoption direkt aus var.data
-                st.divider()
-                st.subheader("📜 Letzte gespeicherte Einträge")
-                related_entries = var.data
-                if related_entries:
-                    last_five = related_entries[-5:][::-1]  # umgekehrte Reihenfolge (neuester oben)
-                    for idx, entry in enumerate(last_five):
-                        col_entry, col_del = st.columns([5, 1])
-                        with col_entry:
-                            st.markdown(f"📅 **{entry.date}** - Wert: `{entry.value}`")
-                            if entry.note:
-                                st.markdown(f"📝 *{entry.note}*")
-                        if col_del.button("🗑️", key=f"del_{entry.date}_{idx}"):
-                            var.data.remove(entry)
-                            self.ss.variableHandle.write_variables()
-                            st.rerun()
-                else:
-                    st.info("Noch keine Einträge gespeichert.")
-
-        
-
-# ---------------- Aufruf der Seite ----------------
+# Aufruf der Seite
 page = AddValuePage()
