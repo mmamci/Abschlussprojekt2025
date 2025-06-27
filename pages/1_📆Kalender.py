@@ -3,15 +3,11 @@ from streamlit_calendar import calendar
 from utils.variable import VariableHandle
 from utils.css_snippets import write_as_pills
 
-
-
-
 class CalendarPage():
     def __init__(self):
         # Variablen und Einträge laden
         ss = st.session_state
-        if "variableHandle" not in ss:
-            ss.variableHandle = VariableHandle()
+
         ss.variableHandle.read_variables()
         self.variables = ss.variableHandle.current_variables
         # Events für Kalender bauen
@@ -38,6 +34,7 @@ class CalendarPage():
                 f"</div>",
                 unsafe_allow_html=True
             )
+
         # Details zum ausgewählten Datum
         if selected and selected.get("start"):
             st.markdown("### 📋 Details zum ausgewählten Datum")

@@ -82,6 +82,7 @@ class AddValuePage:
             bool(self.uploaded_file)
         )
 
+        self.selected_var.data.append(self.new_entry)
         self.ss.variableHandle.write_variables()
 
     def show_entries(self):

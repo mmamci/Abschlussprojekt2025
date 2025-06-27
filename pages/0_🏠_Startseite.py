@@ -1,8 +1,6 @@
 import streamlit as st
 from utils.variable import Variable, VariableHandle
 
-st.session_state.variableHandle = VariableHandle()
-
 def build_main_page():
     st.set_page_config(
         page_title="Startseite",   
