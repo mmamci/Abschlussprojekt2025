@@ -1,145 +1,183 @@
-import streamlit as st, json, random
+import streamlit as st
+import json
 from pathlib import Path
-from utils.json_storage import load_variables, save_variables
 from utils.css_snippets import write_as_pills
-
-COLOR_POOL = [
-    "#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd",
-    "#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf",
-]
+from utils.variable import Variable, VariableHandle
 
 class AddVariablePage:
     def __init__(self):
-        ss = st.session_state
-        if "variables" not in ss:
-            ss.variables = load_variables()
+        self.ss = st.session_state
+        self.initialize_variables()
 
-        ss.setdefault("notification_times", [])
-        ss.setdefault("notification_type", "")
-        ss.setdefault("notif_edit", False)
+        self.ss.variableHandle.read_variables()
+        self.variables = self.ss.variableHandle.current_variables
 
-        self.ss = ss
-        self.build()
+        self.main_page()
 
-    
-    def build(self):
-        st.title("📊 Variable anlegen")
+    def initialize_variables(self):
+        if "name" not in self.ss:
+            self.ss.name = ""
+        if "goal" not in self.ss:
+            self.ss.goal = ""
+        if "var_type" not in self.ss:
+            self.ss.var_type = "Quantitativ"
+        if "unit" not in self.ss:
+            self.ss.unit = ""
+        if "decrease_preferred" not in self.ss:
+            self.ss.decrease_preferred = False
+        if "notification_type" not in self.ss:
+            self.ss.notification_type = "Daily"
+        if "notification_times" not in self.ss:
+            self.ss.notification_times = []
 
-        c1,c2 = st.columns([1,2])
-        with c1:
-            st.text_input("Kurztitel", key="var_shortname")
-        with c2:
-            st.text_input("Ziel", key="var_goal")
+    def main_page(self):
+        st.title("📊 Neue Variable hinzufügen")
 
-        self.var_type_section()
+        self.name_and_unit_selection()
+        
+        self.variable_type_selection()
         st.divider()
-        self.notif_section()
-        st.write("")
 
-        if st.button("✅ Variable speichern"):
+        self.create_notification_display()
+
+        st.divider()
+        if st.button("✅ Variable erstellen"):
             self.save_variable()
 
-        self.existing_vars()
+        self.show_existing_variables()
 
-    
-    def var_type_section(self):
-        v_types = ["Quantitativ","Checkbox","Zuletzt getan","Skala 1-10"]
-        vt = st.selectbox("Art", v_types, key="type_selection")
-        if vt=="Quantitativ":
-            st.info("Zahlenbasierte Variable – z. B. Schritte.")
-            c1,c2 = st.columns(2)
-            with c1:
-                st.selectbox("Einheit",["","kg","km","h","min","Stück"],key="unit_selection")
-            with c2:
-                st.selectbox("Was ist besser?",["Je mehr desto besser","Je weniger desto besser"],
-                             key="quant_pref")
-        elif vt=="Checkbox":
-            st.info("Ja/Nein-Variable.")
-        elif vt=="Zuletzt getan":
-            st.info("Speichert, wann du etwas zuletzt getan hast.")
-        else:
-            st.info("Bewertung 1-10.")
+    def name_and_unit_selection(self):
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            self.ss.name = st.text_input(
+                "Kurztitel der Variable",
+                key="var_shortname",
+                help="Kurzer Name, z.B. 'Schritte', 'Kalorien', 'Wasser'"
+            )
+        with col2:
+            self.ss.goal = st.text_input(
+                "Ziel dieser Variable",
+                key="var_goal",
+                help="Was möchtest du erreichen? Z.B. 10.000 Schritte pro Tag"
+            )
 
-    
-    def notif_section(self):
-        st.subheader("Benachrichtigungen")
-        if not self.ss.notif_edit and not self.ss.notification_times:
-            st.button("+ Benachrichtigung hinzufügen",
-                      on_click=lambda:self.ss.update(notif_edit=True))
-            return
+    def variable_type_selection(self):
+        variable_types = ["Quantitativ", "Checkbox", "Zuletzt getan", "Skala 1-10"]
 
-        if self.ss.notification_times and not self.ss.notif_edit:
-            st.write(f"🔔 {self.ss.notification_type}")
-            write_as_pills(self.ss.notification_times)
-            c1,c2=st.columns(2)
-            if c1.button("🗑️ Löschen"):
-                self.ss.notification_times=[]
-                self.ss.notification_type=""
-            if c2.button("✏️ Bearbeiten"):
-                self.ss.notif_edit=True
-            return
+        st.subheader("Art der Variable")
+        self.ss.var_type = st.selectbox(
+            "Wie soll die Variable gemessen werden?",
+            variable_types,
+            key="type_selection",
+            help="Wähle die passende Art, z.B. Anzahl, Ja/Nein, Datum, Bewertung"
+        )
 
-        
-        nt = st.selectbox("Typ",["Daily","Weekly"],key="notif_type_temp")
-        if nt=="Weekly":
-            days = st.multiselect("Wochentage",
-                   ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"])
-        else:
-            n = st.selectbox("Wie oft pro Tag?",[1,2,3],key="n_times")
-            days=[st.time_input(f"{i+1}. Zeit",key=f"time_{i}").strftime("%H:%M")
-                  for i in range(n)]
+        if self.ss.var_type == "Quantitativ":
+            st.info("Diese Variable wird durch Zahlen beschrieben, z.B. Schritte oder Kalorien.")
 
-        c1,c2=st.columns(2)
-        if c1.button("Speichern"):
-            self.ss.update(notification_type=nt,notification_times=days,notif_edit=False)
-        if c2.button("Abbrechen"):
-            self.ss.notif_edit=False
-
-   
-    def save_variable(self):
-        name=self.ss.get("var_shortname","").strip()
-        if not name:
-            st.warning("Namen eingeben."); return
-        if any(v["name"]==name for v in self.ss.variables):
-            st.warning("Variable existiert."); return
-
-        used={v["color"] for v in self.ss.variables}
-        free=[c for c in COLOR_POOL if c not in used] or ["#999999"]
-        color=random.choice(free)
-
-        self.ss.variables.append({
-            "name":name,
-            "goal":self.ss.get("var_goal",""),
-            "type":self.ss.get("type_selection",""),
-            "unit":self.ss.get("unit_selection",""),
-            "color":color,
-            "notification_type":self.ss.notification_type,
-            "notification_times":self.ss.notification_times,
-        })
-        save_variables(self.ss.variables)
-        st.success("Gespeichert.")
-
-        
-        for k in ["var_shortname","var_goal","unit_selection","quant_pref"]:
-            self.ss.pop(k, None)
-        self.ss.notification_times=[]
-        self.ss.notification_type=""
-
-   
-    def existing_vars(self):
-        if not self.ss.variables: return
-        st.divider(); st.subheader("Bereits erstellt")
-        for idx,v in enumerate(self.ss.variables):
-            col1,col2=st.columns([5,1])
+            col1, col2 = st.columns(2)
             with col1:
-                st.markdown(
-                    f"<span style='background:{v['color']};display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;'></span>"
-                    f"**{v['name']}** – {v['type']} {v.get('unit','')}",
-                    unsafe_allow_html=True
+                self.ss.unit = st.selectbox(
+                    "Einheit der Variable",
+                    ["", "kg", "km", "h", "min", "Stück", "m"],
+                    key="unit_selection",
+                    help="Welche Maßeinheit passt zur Variable?"
                 )
-            if col2.button("🗑️",key=f"del_var_{idx}"):
-                self.ss.variables.pop(idx)
-                save_variables(self.ss.variables)
+
+            with col2:
+                if "Je mehr desto besser" == st.selectbox(
+                    "Was ist besser?",
+                    ["Je mehr desto besser", "Je weniger desto besser"],
+                    key="quant_preference",
+                    help="Beispiel: Mehr Schritte sind besser → 'Je mehr desto besser'"
+                ):
+                    self.ss.decrease_preferred = False
+                else:
+                    self.ss.decrease_preferred = True
+
+        elif self.ss.var_type == "Checkbox":
+            st.info("Diese Variable ist eine Ja/Nein-Antwort. Z.B. 'Sport gemacht heute?'")
+
+        elif self.ss.var_type == "Zuletzt getan":
+            st.info("Diese Variable speichert, wann du zuletzt etwas getan hast. Z.B. 'Zuletzt geraucht'")
+
+        elif self.ss.var_type == "Skala 1-10":
+            st.info("Diese Variable beschreibt deine Einschätzung auf einer Skala, z.B. 'Motivation heute'")
+
+    def create_notification_display(self):
+        st.subheader("Benachrichtigungen")
+
+        if len(self.ss.notification_times) == 0:
+            st.button("+ Benachrichtigung hinzufügen", on_click=self.create_notification_dialog)
+        else:
+            st.write(f"🔔 {self.ss.notification_type} Benachrichtigung(en):")
+            if self.ss.notification_type == "Daily":
+                times = [t.strftime("%H:%M") for t in self.ss.notification_times]
+                write_as_pills(times)
+            elif self.ss.notification_type == "Weekly":
+                write_as_pills(self.ss.notification_times)
+
+            st.button("🗑️ Alle Benachrichtigungen löschen", on_click=lambda: self.ss.notification_times.clear())
+
+    @st.dialog("Benachrichtigung erstellen")
+    def create_notification_dialog(self):
+        st.write("Wähle aus, wann du an diese Variable erinnert werden möchtest.")
+
+        notification_types = ["Daily", "Weekly"]
+        self.ss.notification_type = st.selectbox("Benachrichtigungstyp", notification_types)
+
+        if self.ss.notification_type == "Weekly":
+            weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+            selected_days = st.multiselect("An welchen Tagen möchtest du erinnert werden?", weekdays, key="weekly_input")
+
+            if st.button("Fertig"):
+                self.ss.notification_times = selected_days
+                st.rerun()
+
+        elif self.ss.notification_type == "Daily":
+            times_per_day = st.selectbox("Wie oft pro Tag möchtest du erinnert werden?", [1, 2, 3])
+            for i in range(1, times_per_day + 1):
+                st.time_input(f"{i}. Erinnerungszeitpunkt", key=f"time_input_{i}")
+
+            if st.button("Fertig"):
+                self.ss.notification_times = [self.ss[f"time_input_{i}"] for i in range(1, times_per_day + 1)]
+                st.rerun()
+
+    def save_variable(self):
+        if not self.ss.name:
+            st.warning("Bitte gib einen Namen für die Variable ein.")
+            return
+
+        if any(v.name == self.ss.name for v in self.variables):
+            st.warning("Diese Variable existiert bereits.")
+            return
+
+        new_variable = Variable(
+            self.ss.name,
+            self.ss.goal,
+            self.ss.notification_times,
+            self.ss.var_type,
+            self.ss.unit,
+            self.ss.decrease_preferred
+        )
+
+        self.variables.append(new_variable)
+        self.ss.variableHandle.write_variables()
+        st.success(f"Variable '{self.ss.name}' wurde erstellt!")
+
+    def show_existing_variables(self):
+        st.divider()
+        st.subheader("📋 Bereits erstellte Variablen")
+
+        for i, var in enumerate(self.variables):
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown(f"**{var.name}** — Typ: {var.variable_type} — Einheit: {var.unit}")
+            with col2:
+                if st.button("🗑️ Löschen", key=f"delete_{i}"):
+                    self.variables.pop(i)
+                    self.ss.variableHandle.write_variables()
+                    st.rerun()
 
 
-AddVariablePage()
+page = AddVariablePage() 

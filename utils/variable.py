@@ -32,14 +32,17 @@ class VariableHandle:
 
     def __init__(self):
         self.current_variables = []
+        self.user = "standard"
+        self.password = ""
+        
         self.read_variables()
 
     def read_variables(self):
-        if not os.path.exists('data/variables.json') or os.path.getsize('data/variables.json') == 0:
+        if not os.path.exists(f'data/{self.user}.json') or os.path.getsize(f'data/{self.user}.json') == 0:
             self.current_variables = []
             return
 
-        with open('data/variables.json', 'r') as f:
+        with open(f'data/{self.user}.json', 'r') as f:
             try:
                 variables_list = json.load(f)
                 self.current_variables = []
@@ -61,32 +64,31 @@ class VariableHandle:
 
 
     def write_variables(self):
-        with open('data/variables.json', 'w') as f:
-            for variable in self.current_variables:
-                json.dump(
-                    [
-                        {
-                            "name": variable.name,
-                            "goal": variable.goal,
-                            "alert_times": [
-                                datetime.combine(date.today(), dt).isoformat() for dt in variable.alert_times
-                            ],
-                            "type": variable.variable_type,
-                            "unit": variable.unit,
-                            "decrease_preferred": variable.decrease_preferred,
-                            "data": [
-                                {
-                                    **{k: (v.isoformat() if isinstance(v, (datetime, date, time)) else v) for k, v in entry.__dict__.items()}
-                                }
-                                for entry in variable.data
-                            ]
-                        }
-                        for variable in self.current_variables
-                    ],
-                    f,
-                    indent=4,
-                    default=VariableHandle.default_serializer
-                )
+        with open(f'data/{self.user}.json', 'w') as f:
+            json.dump(
+                [
+                    {
+                        "name": variable.name,
+                        "goal": variable.goal,
+                        "alert_times": [
+                            datetime.combine(date.today(), dt).isoformat() for dt in variable.alert_times
+                        ],
+                        "type": variable.variable_type,
+                        "unit": variable.unit,
+                        "decrease_preferred": variable.decrease_preferred,
+                        "data": [
+                            {
+                                **{k: (v.isoformat() if isinstance(v, (datetime, date, time)) else v) for k, v in entry.__dict__.items()}
+                            }
+                            for entry in variable.data
+                        ]
+                    }
+                    for variable in self.current_variables
+                ],
+                f,
+                indent=4,
+                default=VariableHandle.default_serializer
+            )
 
     @staticmethod
     def default_serializer(obj):
