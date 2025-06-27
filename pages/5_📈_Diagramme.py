@@ -1,73 +1,80 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from utils.variable import VariableHandle, Variable, DataEntry
+from utils.variable import VariableHandle, DataEntry, Variable
 
 class DiagrammPage:
     def __init__(self) -> None:
         st.set_page_config(page_title="Diagramme", page_icon="📆", layout="wide")
         st.title("📈 Diagramme aller Variablen")
 
-        self.ss = st.session_state
-        self.ss.variableHandle.read_variables()
-        self.variables = self.ss.variableHandle.current_variables
+        # ----------------------------------------------------
+        # VariableHandle nur einmal im Session‑State halten
+        # ----------------------------------------------------
+        ss = st.session_state
+        if "variableHandle" not in ss:
+            ss.variableHandle = VariableHandle()        # liest sofort die JSON
+        self.variables: list[Variable] = ss.variableHandle.current_variables
 
-        # Alle DataEntries aller Variablen in eine flache Liste von Dicts umwandeln
-        self.entries = []
-        for var in self.variables:
-            for entry in var.data:
-                # Defensive: Nur Einträge mit Datum und Wert aufnehmen
-                if hasattr(entry, "date") and hasattr(entry, "value"):
-                    self.entries.append({
-                        "variable": var.name,
-                        "type": var.variable_type,
-                        "unit": var.unit,
-                        "goal": var.goal,
-                        "decrease_preferred": var.decrease_preferred,
-                        "date": entry.date,
-                        "value": entry.value,
-                        "note": getattr(entry, "note", ""),
-                        "isFromFitFile": getattr(entry, "isFromFitFile", False)
-                    })
+        # flache Liste aller Einträge
+        self.entries = self._collect_entries()
 
         self.build_page()
 
+    # ---------------------------------------------------------
+    # Hilfsfunktion: DataEntry‑Objekte in Dict‑Zeilen umwandeln
+    # ---------------------------------------------------------
+    def _collect_entries(self) -> list[dict]:
+        rows = []
+        for var in self.variables:
+            for e in var.data:               # <‑‑ e ist DataEntry
+                rows.append(
+                    {
+                        "variable": var.name,
+                        "value":    e.value,
+                        "note":     e.note,
+                        "date":     e.date,
+                    }
+                )
+        return rows
+
+    # ---------------------------------------------------------
     def build_page(self):
         if not self.entries:
             st.info("Es wurden noch keine Werte eingetragen.")
             return
 
+        # ---------------- DataFrame aufbauen -----------------
         df = pd.DataFrame(self.entries)
         if not df.empty and "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
+        # ---------------- Diagramme pro Variable -------------
         for var in self.variables:
-            name = var.name
-            v_type = var.variable_type
-            unit = var.unit or ""
-            goal = var.goal
+            name   = var.name
+            v_type = var.variable_type          # "Quantitativ", "Checkbox", …
+            unit   = var.unit or ""
+            goal   = var.goal or ""
+            color  = "#1f77b4"                  # Defaultfarbe (kannst du auch hinzufügen)
 
-            st.subheader(f"{name}")
+            st.subheader(name)
             if goal:
                 st.markdown(f"**Ziel:** {goal}")
 
-            # Filter Einträge zur Variable
-            if df.empty or "variable" not in df.columns:
-                st.write("Noch keine Werte eingetragen.")
-                st.markdown("---")
-                continue
-            var_df = df[df["variable"] == name].sort_values("date")
+            var_df = df[df["variable"] == name].sort_values("date").copy()
+
             if var_df.empty:
                 st.write("Noch keine Werte eingetragen.")
                 st.markdown("---")
                 continue
 
-            if v_type in ["Quantitativ", "Skala 1-10"]:
+            # 1️⃣  Quantitativ / Skala
+            if v_type in {"Quantitativ", "Skala 1-10"}:
                 chart = (
                     alt.Chart(var_df)
                     .mark_line(point=True)
                     .encode(
-                        x=alt.X("date:T", title="Datum"),
+                        x=alt.X("date:T",  title="Datum"),
                         y=alt.Y("value:Q", title=f"Wert ({unit})" if unit else "Wert"),
                         tooltip=["date:T", "value:Q", "note:N"],
                     )
@@ -75,21 +82,22 @@ class DiagrammPage:
                 )
                 st.altair_chart(chart, use_container_width=True)
 
+            # 2️⃣  Checkbox
             elif v_type == "Checkbox":
-                var_df = var_df.copy()
                 var_df["value_num"] = var_df["value"].astype(int)
                 chart = (
                     alt.Chart(var_df)
                     .mark_bar()
                     .encode(
-                        x=alt.X("date:T", title="Datum"),
-                        y=alt.Y("value_num:Q", title="Erledigt (1 = Ja)"),
+                        x=alt.X("date:T",  title="Datum"),
+                        y=alt.Y("value_num:Q", title="Erledigt (1 = Ja)"),
                         tooltip=["date:T", "value_num", "note:N"],
                     )
                     .properties(height=200, width=700)
                 )
                 st.altair_chart(chart, use_container_width=True)
 
+            # 3️⃣  Zuletzt getan
             elif v_type == "Zuletzt getan":
                 chart = (
                     alt.Chart(var_df)
@@ -104,16 +112,17 @@ class DiagrammPage:
                 )
                 st.altair_chart(chart, use_container_width=True)
 
-            # Notizen als Tabelle unter dem Diagramm (optional)
-            required_cols = ["date", "value", "note"]
-            if all(col in var_df.columns for col in required_cols):
-                notes_df = var_df[required_cols]
-                if not notes_df.empty and notes_df["note"].astype(str).str.strip().any():
-                    with st.expander("Notizen anzeigen"):
-                        st.table(notes_df.rename(columns={
-                            "date": "Datum", "value": "Wert", "note": "Notiz"
-                        }))
+            # Notizen als Tabelle einblendbar
+            if var_df["note"].astype(str).str.strip().any():
+                with st.expander("Notizen anzeigen"):
+                    st.table(
+                        var_df[["date", "value", "note"]]
+                        .rename(columns={"date": "Datum", "value": "Wert", "note": "Notiz"})
+                    )
 
             st.markdown("---")
 
-DiagrammPage()
+
+# Stand‑alone‑Start
+if __name__ == "__main__":
+    DiagrammPage()

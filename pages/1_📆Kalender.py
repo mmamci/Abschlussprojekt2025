@@ -2,18 +2,30 @@ import streamlit as st
 from streamlit_calendar import calendar
 from utils.variable import VariableHandle
 from utils.css_snippets import write_as_pills
+import itertools
 
-class CalendarPage():
+
+
+class CalendarPage:
     def __init__(self):
-        # Variablen und Einträge laden
         ss = st.session_state
 
         ss.variableHandle.read_variables()
         self.variables = ss.variableHandle.current_variables
-        # Events für Kalender bauen
+
+        # 🔁 Farben rotieren lassen, wenn keine vorhanden sind
+        palette = itertools.cycle([
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
+            "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+            "#bcbd22", "#17becf"
+        ])
+        color_map = {}
+
         self.events = []
         for var in self.variables:
-            color = getattr(var, "color", "#1f77b4")
+            color = getattr(var, "color", None) or color_map.get(var.name) or next(palette)
+            color_map[var.name] = color  # speichern
+
             for entry in var.data:
                 self.events.append({
                     "title": f"{var.name}: {entry.value}",
@@ -21,16 +33,17 @@ class CalendarPage():
                     "color": color,
                     "description": entry.note or ""
                 })
+
         st.title("📆 Kalender Ansicht")
         selected = calendar(events=self.events, options={"selectable": True})
-        # Legende anzeigen
+
+        # 🎨 Legende
         st.write("### Legende")
-        for v in self.variables:
-            color = getattr(v, "color", "#1f77b4")
+        for name, color in color_map.items():
             st.markdown(
                 f"<div style='display:flex; align-items:center; margin-bottom:6px;'>"
                 f"<div style='background-color:{color}; width:20px; height:20px; margin-right:10px; border-radius:4px;'></div>"
-                f"<span style='color:white; background-color:#333; padding:4px 8px; border-radius:4px;'>{v.name}</span>"
+                f"<span style='color:white; background-color:#333; padding:4px 8px; border-radius:4px;'>{name}</span>"
                 f"</div>",
                 unsafe_allow_html=True
             )
@@ -52,4 +65,5 @@ class CalendarPage():
                     )
                     st.markdown("---")
 
+# Aufruf der Seite
 CalendarPage()
