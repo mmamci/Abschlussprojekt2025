@@ -21,3 +21,4 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+package-mode = false
