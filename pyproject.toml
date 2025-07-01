@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Default template for PDM package"
 authors = [
     {name = "SN0204", email = "-"},
-    {name = "mmamci", email = "-"},
+    {name = "mmamci", email = "mm3505@mci4me.at"},
 ]
 
 dependencies = [
