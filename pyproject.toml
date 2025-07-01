@@ -1,7 +1,7 @@
 [project]
 name = "Abschlussprojekt2025"
 version = "0.1.0"
-description = "Default template for PDM package"
+description = "Ein Gesundheits Tracking Dashboard"
 authors = [
     {name = "mmamci", email = "mm3505@mci4me.at"},
 ]
