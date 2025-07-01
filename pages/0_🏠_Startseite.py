@@ -1,6 +1,16 @@
 import streamlit as st
 from utils.variable import Variable, VariableHandle
 
+import streamlit as st
+from utils.authenticator import Authenticator
+from utils.variable import VariableHandle
+
+ss = st.session_state
+if "variableHandle" not in ss:
+    ss.variableHandle = VariableHandle()
+
+authenticator = Authenticator()
+
 
 def build_main_page():
     st.set_page_config(
