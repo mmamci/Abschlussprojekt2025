@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_calendar import calendar
-from utils.variable import VariableHandle
-from utils.css_snippets import write_as_pills
+from ..utils.variable import VariableHandle
+from ..utils.css_snippets import write_as_pills
 import itertools
 
 
