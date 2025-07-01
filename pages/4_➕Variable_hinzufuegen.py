@@ -4,6 +4,7 @@ from pathlib import Path
 from utils.css_snippets import write_as_pills
 from utils.variable import Variable, VariableHandle
 
+
 class AddVariablePage:
     def __init__(self):
         self.ss = st.session_state
@@ -34,7 +35,7 @@ class AddVariablePage:
         st.title("📊 Neue Variable hinzufügen")
 
         self.name_and_unit_selection()
-        
+
         self.variable_type_selection()
         st.divider()
 
@@ -62,7 +63,8 @@ class AddVariablePage:
             )
 
     def variable_type_selection(self):
-        variable_types = ["Quantitativ", "Checkbox", "Zuletzt getan", "Skala 1-10"]
+        variable_types = ["Quantitativ", "Checkbox",
+                          "Zuletzt getan", "Skala 1-10"]
 
         st.subheader("Art der Variable")
         self.ss.var_type = st.selectbox(
@@ -73,7 +75,8 @@ class AddVariablePage:
         )
 
         if self.ss.var_type == "Quantitativ":
-            st.info("Diese Variable wird durch Zahlen beschrieben, z.B. Schritte oder Kalorien.")
+            st.info(
+                "Diese Variable wird durch Zahlen beschrieben, z.B. Schritte oder Kalorien.")
 
             col1, col2 = st.columns(2)
             with col1:
@@ -96,51 +99,63 @@ class AddVariablePage:
                     self.ss.decrease_preferred = True
 
         elif self.ss.var_type == "Checkbox":
-            st.info("Diese Variable ist eine Ja/Nein-Antwort. Z.B. 'Sport gemacht heute?'")
+            st.info(
+                "Diese Variable ist eine Ja/Nein-Antwort. Z.B. 'Sport gemacht heute?'")
 
         elif self.ss.var_type == "Zuletzt getan":
-            st.info("Diese Variable speichert, wann du zuletzt etwas getan hast. Z.B. 'Zuletzt geraucht'")
+            st.info(
+                "Diese Variable speichert, wann du zuletzt etwas getan hast. Z.B. 'Zuletzt geraucht'")
 
         elif self.ss.var_type == "Skala 1-10":
-            st.info("Diese Variable beschreibt deine Einschätzung auf einer Skala, z.B. 'Motivation heute'")
+            st.info(
+                "Diese Variable beschreibt deine Einschätzung auf einer Skala, z.B. 'Motivation heute'")
 
     def create_notification_display(self):
         st.subheader("Benachrichtigungen")
 
         if len(self.ss.notification_times) == 0:
-            st.button("+ Benachrichtigung hinzufügen", on_click=self.create_notification_dialog)
+            st.button("+ Benachrichtigung hinzufügen",
+                      on_click=self.create_notification_dialog)
         else:
             st.write(f"🔔 {self.ss.notification_type} Benachrichtigung(en):")
             if self.ss.notification_type == "Daily":
-                times = [t.strftime("%H:%M") for t in self.ss.notification_times]
+                times = [t.strftime("%H:%M")
+                         for t in self.ss.notification_times]
                 write_as_pills(times)
             elif self.ss.notification_type == "Weekly":
                 write_as_pills(self.ss.notification_times)
 
-            st.button("🗑️ Alle Benachrichtigungen löschen", on_click=lambda: self.ss.notification_times.clear())
+            st.button("🗑️ Alle Benachrichtigungen löschen",
+                      on_click=lambda: self.ss.notification_times.clear())
 
     @st.dialog("Benachrichtigung erstellen")
     def create_notification_dialog(self):
         st.write("Wähle aus, wann du an diese Variable erinnert werden möchtest.")
 
         notification_types = ["Daily", "Weekly"]
-        self.ss.notification_type = st.selectbox("Benachrichtigungstyp", notification_types)
+        self.ss.notification_type = st.selectbox(
+            "Benachrichtigungstyp", notification_types)
 
         if self.ss.notification_type == "Weekly":
-            weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
-            selected_days = st.multiselect("An welchen Tagen möchtest du erinnert werden?", weekdays, key="weekly_input")
+            weekdays = ["Montag", "Dienstag", "Mittwoch",
+                        "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+            selected_days = st.multiselect(
+                "An welchen Tagen möchtest du erinnert werden?", weekdays, key="weekly_input")
 
             if st.button("Fertig"):
                 self.ss.notification_times = selected_days
                 st.rerun()
 
         elif self.ss.notification_type == "Daily":
-            times_per_day = st.selectbox("Wie oft pro Tag möchtest du erinnert werden?", [1, 2, 3])
+            times_per_day = st.selectbox(
+                "Wie oft pro Tag möchtest du erinnert werden?", [1, 2, 3])
             for i in range(1, times_per_day + 1):
-                st.time_input(f"{i}. Erinnerungszeitpunkt", key=f"time_input_{i}")
+                st.time_input(f"{i}. Erinnerungszeitpunkt",
+                              key=f"time_input_{i}")
 
             if st.button("Fertig"):
-                self.ss.notification_times = [self.ss[f"time_input_{i}"] for i in range(1, times_per_day + 1)]
+                self.ss.notification_times = [
+                    self.ss[f"time_input_{i}"] for i in range(1, times_per_day + 1)]
                 st.rerun()
 
     def save_variable(self):
@@ -172,7 +187,8 @@ class AddVariablePage:
         for i, var in enumerate(self.variables):
             col1, col2 = st.columns([4, 1])
             with col1:
-                st.markdown(f"**{var.name}** — Typ: {var.variable_type} — Einheit: {var.unit}")
+                st.markdown(
+                    f"**{var.name}** — Typ: {var.variable_type} — Einheit: {var.unit}")
             with col2:
                 if st.button("🗑️ Löschen", key=f"delete_{i}"):
                     self.variables.pop(i)
@@ -180,4 +196,4 @@ class AddVariablePage:
                     st.rerun()
 
 
-page = AddVariablePage() 
+AddVariablePage()

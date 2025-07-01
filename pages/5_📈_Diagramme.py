@@ -1,61 +1,53 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import numpy as np
 from utils.variable import VariableHandle, DataEntry, Variable
+
 
 class DiagrammPage:
     def __init__(self) -> None:
-        st.set_page_config(page_title="Diagramme", page_icon="📆", layout="wide")
+        st.set_page_config(page_title="Diagramme",
+                           page_icon="📆", layout="wide")
         st.title("📈 Diagramme aller Variablen")
 
-        # ----------------------------------------------------
-        # VariableHandle nur einmal im Session‑State halten
-        # ----------------------------------------------------
         ss = st.session_state
         if "variableHandle" not in ss:
-            ss.variableHandle = VariableHandle()        # liest sofort die JSON
-        self.variables: list[Variable] = ss.variableHandle.current_variables
+            ss.variableHandle = VariableHandle()
+        self.variables = ss.variableHandle.current_variables
 
-        # flache Liste aller Einträge
         self.entries = self._collect_entries()
 
         self.build_page()
 
-    # ---------------------------------------------------------
-    # Hilfsfunktion: DataEntry‑Objekte in Dict‑Zeilen umwandeln
-    # ---------------------------------------------------------
-    def _collect_entries(self) -> list[dict]:
+    def _collect_entries(self):
         rows = []
         for var in self.variables:
-            for e in var.data:               # <‑‑ e ist DataEntry
-                rows.append(
-                    {
-                        "variable": var.name,
-                        "value":    e.value,
-                        "note":     e.note,
-                        "date":     e.date,
-                    }
-                )
+            for e in var.data:
+                rows.append({
+                    "variable": var.name,
+                    "value": e.value,
+                    "note": e.note,
+                    "date": e.date,
+                })
         return rows
 
-    # ---------------------------------------------------------
     def build_page(self):
         if not self.entries:
             st.info("Es wurden noch keine Werte eingetragen.")
             return
 
-        # ---------------- DataFrame aufbauen -----------------
         df = pd.DataFrame(self.entries)
         if not df.empty and "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-        # ---------------- Diagramme pro Variable -------------
         for var in self.variables:
-            name   = var.name
-            v_type = var.variable_type          # "Quantitativ", "Checkbox", …
-            unit   = var.unit or ""
-            goal   = var.goal or ""
-            color  = "#1f77b4"                  # Defaultfarbe (kannst du auch hinzufügen)
+            name = var.name
+            v_type = var.variable_type
+            unit = var.unit or ""
+            goal = var.goal or ""
 
             st.subheader(name)
             if goal:
@@ -68,36 +60,34 @@ class DiagrammPage:
                 st.markdown("---")
                 continue
 
-            # 1️⃣  Quantitativ / Skala
             if v_type in {"Quantitativ", "Skala 1-10"}:
                 chart = (
                     alt.Chart(var_df)
                     .mark_line(point=True)
                     .encode(
-                        x=alt.X("date:T",  title="Datum"),
-                        y=alt.Y("value:Q", title=f"Wert ({unit})" if unit else "Wert"),
+                        x=alt.X("date:T", title="Datum"),
+                        y=alt.Y(
+                            "value:Q", title=f"Wert ({unit})" if unit else "Wert"),
                         tooltip=["date:T", "value:Q", "note:N"],
                     )
                     .properties(height=250, width=700)
                 )
                 st.altair_chart(chart, use_container_width=True)
 
-            # 2️⃣  Checkbox
             elif v_type == "Checkbox":
                 var_df["value_num"] = var_df["value"].astype(int)
                 chart = (
                     alt.Chart(var_df)
                     .mark_bar()
                     .encode(
-                        x=alt.X("date:T",  title="Datum"),
-                        y=alt.Y("value_num:Q", title="Erledigt (1 = Ja)"),
+                        x=alt.X("date:T", title="Datum"),
+                        y=alt.Y("value_num:Q", title="Erledigt (1=Ja)"),
                         tooltip=["date:T", "value_num", "note:N"],
                     )
                     .properties(height=200, width=700)
                 )
                 st.altair_chart(chart, use_container_width=True)
 
-            # 3️⃣  Zuletzt getan
             elif v_type == "Zuletzt getan":
                 chart = (
                     alt.Chart(var_df)
@@ -112,7 +102,6 @@ class DiagrammPage:
                 )
                 st.altair_chart(chart, use_container_width=True)
 
-            # Notizen als Tabelle einblendbar
             if var_df["note"].astype(str).str.strip().any():
                 with st.expander("Notizen anzeigen"):
                     st.table(
@@ -123,6 +112,4 @@ class DiagrammPage:
             st.markdown("---")
 
 
-# Stand‑alone‑Start
-if __name__ == "__main__":
-    DiagrammPage()
+DiagrammPage()

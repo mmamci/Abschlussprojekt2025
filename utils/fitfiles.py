@@ -1,4 +1,5 @@
-from fitparse import FitFile 
+from fitparse import FitFile
+
 
 def read_fit_file(file_path):
     """
@@ -13,6 +14,4 @@ def read_fit_file(file_path):
             record_data[field.name] = field.value
         data.append(record_data)
 
-    return data 
-
-
+    return data

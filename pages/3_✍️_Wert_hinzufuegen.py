@@ -1,7 +1,8 @@
 import streamlit as st
 from datetime import datetime
-from utils.fitfiles import read_fit_file 
+from utils.fitfiles import read_fit_file
 from utils.variable import Variable, VariableHandle, DataEntry
+
 
 class AddValuePage:
     def __init__(self):
@@ -16,7 +17,8 @@ class AddValuePage:
         self.new_entry = None
 
         if not self.variables:
-            st.info("⚠️ Bitte erst eine Variable erstellen, bevor du Werte hinzufügen kannst.")
+            st.info(
+                "⚠️ Bitte erst eine Variable erstellen, bevor du Werte hinzufügen kannst.")
             return
 
         self.build_page()
@@ -28,15 +30,19 @@ class AddValuePage:
 
         col1, col2 = st.columns(2)
         with col1:
-            self.selected_var_name = st.selectbox("Variable auswählen", variable_names, key="selected_var")
+            self.selected_var_name = st.selectbox(
+                "Variable auswählen", variable_names, key="selected_var")
         with col2:
-            self.selected_date = st.date_input("Datum", datetime.today(), key="self.selected_date")
+            self.selected_date = st.date_input(
+                "Datum", datetime.today(), key="self.selected_date")
 
-        self.selected_var = next(v for v in self.variables if v.name == self.selected_var_name)
+        self.selected_var = next(
+            v for v in self.variables if v.name == self.selected_var_name)
 
         st.divider()
 
-        self.uploaded_file = st.file_uploader("FIT-Datei hochladen (optional)", type=["fit"])
+        self.uploaded_file = st.file_uploader(
+            "FIT-Datei hochladen (optional)", type=["fit"])
         if self.uploaded_file:
             fit_data = read_fit_file(self.uploaded_file)
             st.success("FIT-Datei erfolgreich gelesen.")
@@ -45,7 +51,7 @@ class AddValuePage:
 
         st.divider()
         self.type_dependent_input()
-                
+
         if st.button("📥 Wert speichern"):
             self.save_entry()
 
@@ -61,14 +67,17 @@ class AddValuePage:
             self.user_value = st.number_input(label, key="quant_input")
 
         elif var_type == "Checkbox":
-            self.user_value = st.checkbox("Heute erledigt?", key="checkbox_input")
+            self.user_value = st.checkbox(
+                "Heute erledigt?", key="checkbox_input")
 
         elif var_type == "Zuletzt getan":
-            st.info("Diese Variable verwendet automatisch das ausgewählte Datum als Wert.")
+            st.info(
+                "Diese Variable verwendet automatisch das ausgewählte Datum als Wert.")
             self.user_value = self.selected_date.strftime("%Y-%m-%d")
 
         elif var_type == "Skala 1-10":
-            self.user_value = st.slider("Wert auf der Skala", 1, 10, key="scale_input")
+            self.user_value = st.slider(
+                "Wert auf der Skala", 1, 10, key="scale_input")
 
         self.note = st.text_area("📝 Notiz (optional)", key="user_note")
 
@@ -107,5 +116,5 @@ class AddValuePage:
         else:
             st.info("Noch keine Einträge gespeichert.")
 
-# Aufruf der Seite
-page = AddValuePage()
+
+AddValuePage()

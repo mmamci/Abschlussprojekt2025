@@ -5,7 +5,6 @@ from utils.css_snippets import write_as_pills
 import itertools
 
 
-
 class CalendarPage:
     def __init__(self):
         ss = st.session_state
@@ -23,12 +22,23 @@ class CalendarPage:
 
         self.events = []
         for var in self.variables:
-            color = getattr(var, "color", None) or color_map.get(var.name) or next(palette)
+            color = getattr(var, "color", None) or color_map.get(
+                var.name) or next(palette)
             color_map[var.name] = color  # speichern
 
             for entry in var.data:
+
+                if entry.value == True:
+                    display_value = "✅"
+
+                elif entry.value == False:
+                    display_value = "❌"
+
+                else:
+                    display_value = entry.value
+
                 self.events.append({
-                    "title": f"{var.name}: {entry.value}",
+                    "title": f"{var.name}: {display_value}",
                     "start": str(entry.date),
                     "color": color,
                     "description": entry.note or ""
@@ -52,7 +62,8 @@ class CalendarPage:
         if selected and selected.get("start"):
             st.markdown("### 📋 Details zum ausgewählten Datum")
             selected_date = selected["start"][:10]
-            date_events = [e for e in self.events if e["start"].startswith(selected_date)]
+            date_events = [
+                e for e in self.events if e["start"].startswith(selected_date)]
             if not date_events:
                 st.info("Keine Einträge für dieses Datum.")
             else:
@@ -65,5 +76,5 @@ class CalendarPage:
                     )
                     st.markdown("---")
 
-# Aufruf der Seite
+
 CalendarPage()
