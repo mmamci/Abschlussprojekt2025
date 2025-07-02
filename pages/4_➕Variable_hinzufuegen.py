@@ -84,7 +84,8 @@ class AddVariablePage:
                     "Einheit der Variable",
                     ["", "kg", "km", "h", "min", "Stück", "m"],
                     key="unit_selection",
-                    help="Welche Maßeinheit passt zur Variable?"
+                    help="Welche Maßeinheit passt zur Variable?",
+                    accept_new_options=True
                 )
 
             with col2:

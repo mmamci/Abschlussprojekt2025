@@ -52,6 +52,10 @@ class VariableHandle:
         Shows a Streamlit error if authentication or reading fails.
         """
 
+        if self.user == "":
+            st.error(
+                "Kein Account angemeldet. Anmeldung erfolgt auf der main-Seite.")
+
         file_path = f'data/{self.user}.json'
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             self.current_variables = []
@@ -95,6 +99,11 @@ class VariableHandle:
         """
         Saves the current variables to the user's encrypted file.
         """
+
+        if self.user == "":
+            st.error(
+                "Kein Account angemeldet. Anmeldung erfolgt auf der main-Seite.")
+
         file_path = f'data/{self.user}.json'
         data = [
             {
