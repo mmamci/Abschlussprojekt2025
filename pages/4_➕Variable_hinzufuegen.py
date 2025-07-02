@@ -1,8 +1,8 @@
 import streamlit as st
 import json
 from pathlib import Path
-from ..utils.css_snippets import write_as_pills
-from ..utils.variable import Variable, VariableHandle
+from utils.css_snippets import write_as_pills
+from utils.variable import Variable, VariableHandle
 
 
 class AddVariablePage:

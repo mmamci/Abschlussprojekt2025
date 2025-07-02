@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import datetime
-from ..utils.fitfiles import read_fit_file
-from ..utils.variable import Variable, VariableHandle, DataEntry
+from utils.fitfiles import read_fit_file
+from utils.variable import Variable, VariableHandle, DataEntry
 
 
 class AddValuePage:

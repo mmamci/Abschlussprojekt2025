@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime
-from ..utils.variable import VariableHandle
+from utils.variable import VariableHandle
 
 
 class HighlightsPage:
